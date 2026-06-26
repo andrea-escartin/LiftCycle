@@ -72,7 +72,9 @@ own cycle data, workouts, body metrics, and nutrition.
 
 ### Frontend
 - React 18, TypeScript, Vite
-- (libraries TBD as we build)
+- React Router v6 for navigation
+- Axios for API calls (all calls go through src/api/, never fetch() directly)
+- No CSS framework yet — plain CSS modules per component
 
 ## Architecture
 
@@ -94,10 +96,11 @@ own cycle data, workouts, body metrics, and nutrition.
 - tests/               — pytest tests
 
 ### Frontend (frontend/)
-- src/api/             — all fetch calls, one file per domain
-- src/components/      — reusable UI components
-- src/pages/           — one folder per screen/route
-- src/hooks/           — custom React hooks
+- src/pages/        — one folder per screen
+- src/components/   — reusable UI pieces
+- src/api/          — one file per domain (auth.ts, cycles.ts)
+- src/hooks/        — custom React hooks
+- src/main.tsx      — app entry point, router setup
 
 ## Conventions
 
