@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.db import create_db_and_tables
 from app import models  # noqa: F401
 from app.routers.auth import router as auth_router
+from app.routers.cycles import router as cycles_router
 
 
 @asynccontextmanager
@@ -27,6 +28,7 @@ app.add_middleware(
 
 
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(cycles_router, prefix="/cycles", tags=["cycles"])
 
 
 @app.get("/health")
