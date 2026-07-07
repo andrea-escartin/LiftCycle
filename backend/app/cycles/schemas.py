@@ -1,3 +1,4 @@
+import uuid
 from datetime import date, datetime
 from typing import Optional
 
@@ -11,13 +12,14 @@ class CycleEntryCreate(SQLModel):
 
 
 class CycleEntryRead(SQLModel):
-    id: int
-    user_id: int
+    id: uuid.UUID
+    user_id: uuid.UUID
     start_date: date
     end_date: Optional[date]
     cycle_length: Optional[int]
     notes: Optional[str]
     created_at: datetime
+    updated_at: datetime
 
 
 class CycleEntryUpdate(SQLModel):

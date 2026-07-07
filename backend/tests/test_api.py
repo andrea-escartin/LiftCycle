@@ -8,6 +8,8 @@ from sqlmodel import Session, SQLModel, create_engine
 from app.database import get_session
 from app.main import app
 
+_NONEXISTENT_UUID = "00000000-0000-0000-0000-000000000000"
+
 
 @pytest.fixture(name="client")
 def client_fixture():
@@ -33,7 +35,10 @@ def client_fixture():
 
 
 def _auth_headers(client: TestClient, email: str = "test@example.com", password: str = "testpass") -> dict:
-    client.post("/api/v1/auth/register", json={"email": email, "password": password})
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "password": password, "last_period_start": "2024-01-01"},
+    )
     resp = client.post("/api/v1/auth/login", data={"username": email, "password": password})
     token = resp.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
@@ -42,7 +47,10 @@ def _auth_headers(client: TestClient, email: str = "test@example.com", password:
 # --- Auth ---
 
 def test_register_new_user(client):
-    resp = client.post("/api/v1/auth/register", json={"email": "new@example.com", "password": "pw"})
+    resp = client.post(
+        "/api/v1/auth/register",
+        json={"email": "new@example.com", "password": "pw", "last_period_start": "2024-01-01"},
+    )
     assert resp.status_code == 201
     data = resp.json()
     assert data["email"] == "new@example.com"
@@ -53,20 +61,32 @@ def test_register_new_user(client):
 
 
 def test_register_duplicate_email(client):
-    client.post("/api/v1/auth/register", json={"email": "dup@example.com", "password": "pw"})
-    resp = client.post("/api/v1/auth/register", json={"email": "dup@example.com", "password": "other"})
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "dup@example.com", "password": "pw", "last_period_start": "2024-01-01"},
+    )
+    resp = client.post(
+        "/api/v1/auth/register",
+        json={"email": "dup@example.com", "password": "other", "last_period_start": "2024-01-01"},
+    )
     assert resp.status_code == 400
 
 
 def test_login_correct_credentials(client):
-    client.post("/api/v1/auth/register", json={"email": "user@example.com", "password": "secret"})
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "user@example.com", "password": "secret", "last_period_start": "2024-01-01"},
+    )
     resp = client.post("/api/v1/auth/login", data={"username": "user@example.com", "password": "secret"})
     assert resp.status_code == 200
     assert "access_token" in resp.json()
 
 
 def test_login_wrong_password(client):
-    client.post("/api/v1/auth/register", json={"email": "user@example.com", "password": "secret"})
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "user@example.com", "password": "secret", "last_period_start": "2024-01-01"},
+    )
     resp = client.post("/api/v1/auth/login", data={"username": "user@example.com", "password": "wrong"})
     assert resp.status_code == 401
 
@@ -106,7 +126,7 @@ def test_get_cycle_by_id(client):
 
 def test_get_cycle_wrong_id(client):
     headers = _auth_headers(client)
-    resp = client.get("/api/v1/cycles/999", headers=headers)
+    resp = client.get(f"/api/v1/cycles/{_NONEXISTENT_UUID}", headers=headers)
     assert resp.status_code == 404
 
 

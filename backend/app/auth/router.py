@@ -16,7 +16,12 @@ def register(body: UserCreate, session: Session = Depends(get_session)) -> User:
     if existing:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
 
-    user = User(email=body.email, hashed_password=hash_password(body.password))
+    user = User(
+        email=body.email,
+        hashed_password=hash_password(body.password),
+        last_period_start=body.last_period_start,
+        cycle_length_override=body.cycle_length_override,
+    )
     session.add(user)
     session.commit()
     session.refresh(user)
