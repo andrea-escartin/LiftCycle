@@ -20,3 +20,13 @@ def create_access_token(data: dict) -> str:
     payload = data.copy()
     payload["exp"] = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=ALGORITHM)
+
+
+def create_refresh_token(data: dict) -> str:
+    payload = data.copy()
+    payload["exp"] = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    return jwt.encode(payload, settings.REFRESH_SECRET_KEY, algorithm=ALGORITHM)
+
+
+def verify_token(token: str, secret_key: str) -> dict:
+    return jwt.decode(token, secret_key, algorithms=[ALGORITHM])
