@@ -1,7 +1,8 @@
 from fastapi import HTTPException, status
 from sqlmodel import Session, select
 
-from app.models import CycleEntry, CycleEntryCreate, CycleEntryUpdate
+from app.cycles.models import CycleEntry
+from app.cycles.schemas import CycleEntryCreate, CycleEntryUpdate
 
 
 def create_cycle(session: Session, user_id: int, data: CycleEntryCreate) -> CycleEntry:

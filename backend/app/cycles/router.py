@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, Response, status
 from sqlmodel import Session
 
-from app.auth import get_current_user
-from app.db import get_session
-from app.models import CycleEntryCreate, CycleEntryRead, CycleEntryUpdate, User
-from app.services import create_cycle, delete_cycle, get_cycle, get_cycles, update_cycle
+from app.auth.dependencies import get_current_user
+from app.database import get_session
+from app.cycles.schemas import CycleEntryCreate, CycleEntryRead, CycleEntryUpdate
+from app.cycles.service import create_cycle, delete_cycle, get_cycle, get_cycles, update_cycle
+from app.users.models import User
 
 router = APIRouter()
 
