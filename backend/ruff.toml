@@ -1,0 +1,20 @@
+# ruff.toml
+line-length = 120
+target-version = "py312"
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes (unused imports, undefined names)
+    "I",   # isort (import ordering)
+    "B",   # flake8-bugbear (common bugs)
+    "UP",  # pyupgrade (modern Python syntax)
+]
+ignore = [
+    "B008",  # FastAPI uses function calls in Depends() — ruff flags this incorrectly
+    "E501",  # line too long — handled by formatter, not linter
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["S101"]  # allow assert in tests

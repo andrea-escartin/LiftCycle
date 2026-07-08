@@ -1,0 +1,78 @@
+name: Backend
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: liftcycle_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync --frozen
+
+      - name: Run tests
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+psycopg2://testuser:testpassword@localhost:5432/liftcycle_test
+          SECRET_KEY: ci-test-secret-key-not-real-32chars
+          REFRESH_SECRET_KEY: ci-test-refresh-key-not-real-32chars
+          ACCESS_TOKEN_EXPIRE_MINUTES: 15
+          REFRESH_TOKEN_EXPIRE_DAYS: 30
+          FRONTEND_URL: http://localhost:5173
+          ENVIRONMENT: test
+        run: uv run pytest -v --tb=short
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync --frozen
+
+      - name: Run ruff (linter)
+        working-directory: backend
+        run: uv run ruff check .
+
+      - name: Run ruff (formatter check)
+        working-directory: backend
+        run: uv run ruff format --check .
