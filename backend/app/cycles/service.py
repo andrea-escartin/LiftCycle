@@ -1,10 +1,13 @@
+import uuid
+
 from fastapi import HTTPException, status
 from sqlmodel import Session, select
 
-from app.models import CycleEntry, CycleEntryCreate, CycleEntryUpdate
+from app.cycles.models import CycleEntry
+from app.cycles.schemas import CycleEntryCreate, CycleEntryUpdate
 
 
-def create_cycle(session: Session, user_id: int, data: CycleEntryCreate) -> CycleEntry:
+def create_cycle(session: Session, user_id: uuid.UUID, data: CycleEntryCreate) -> CycleEntry:
     entry = CycleEntry(user_id=user_id, **data.model_dump())
     session.add(entry)
     session.commit()
@@ -13,7 +16,7 @@ def create_cycle(session: Session, user_id: int, data: CycleEntryCreate) -> Cycl
 
 
 def get_cycles(
-    session: Session, user_id: int, skip: int = 0, limit: int = 20
+    session: Session, user_id: uuid.UUID, skip: int = 0, limit: int = 20
 ) -> list[CycleEntry]:
     return list(
         session.exec(
@@ -26,7 +29,7 @@ def get_cycles(
     )
 
 
-def _get_or_404(session: Session, user_id: int, cycle_id: int) -> CycleEntry:
+def _get_or_404(session: Session, user_id: uuid.UUID, cycle_id: uuid.UUID) -> CycleEntry:
     entry = session.exec(
         select(CycleEntry).where(
             CycleEntry.id == cycle_id, CycleEntry.user_id == user_id
@@ -37,12 +40,12 @@ def _get_or_404(session: Session, user_id: int, cycle_id: int) -> CycleEntry:
     return entry
 
 
-def get_cycle(session: Session, user_id: int, cycle_id: int) -> CycleEntry:
+def get_cycle(session: Session, user_id: uuid.UUID, cycle_id: uuid.UUID) -> CycleEntry:
     return _get_or_404(session, user_id, cycle_id)
 
 
 def update_cycle(
-    session: Session, user_id: int, cycle_id: int, data: CycleEntryUpdate
+    session: Session, user_id: uuid.UUID, cycle_id: uuid.UUID, data: CycleEntryUpdate
 ) -> CycleEntry:
     entry = _get_or_404(session, user_id, cycle_id)
     for field, value in data.model_dump(exclude_none=True).items():
@@ -53,7 +56,7 @@ def update_cycle(
     return entry
 
 
-def delete_cycle(session: Session, user_id: int, cycle_id: int) -> None:
+def delete_cycle(session: Session, user_id: uuid.UUID, cycle_id: uuid.UUID) -> None:
     entry = _get_or_404(session, user_id, cycle_id)
     session.delete(entry)
     session.commit()

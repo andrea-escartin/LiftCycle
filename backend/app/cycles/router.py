@@ -1,10 +1,13 @@
+import uuid
+
 from fastapi import APIRouter, Depends, Response, status
 from sqlmodel import Session
 
-from app.auth import get_current_user
-from app.db import get_session
-from app.models import CycleEntryCreate, CycleEntryRead, CycleEntryUpdate, User
-from app.services import create_cycle, delete_cycle, get_cycle, get_cycles, update_cycle
+from app.auth.dependencies import get_current_user
+from app.cycles.schemas import CycleEntryCreate, CycleEntryRead, CycleEntryUpdate
+from app.cycles.service import create_cycle, delete_cycle, get_cycle, get_cycles, update_cycle
+from app.database import get_session
+from app.users.models import User
 
 router = APIRouter()
 
@@ -30,7 +33,7 @@ def list_cycles(
 
 @router.get("/{cycle_id}", response_model=CycleEntryRead)
 def read_cycle(
-    cycle_id: int,
+    cycle_id: uuid.UUID,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> CycleEntryRead:
@@ -39,7 +42,7 @@ def read_cycle(
 
 @router.patch("/{cycle_id}", response_model=CycleEntryRead)
 def patch_cycle(
-    cycle_id: int,
+    cycle_id: uuid.UUID,
     data: CycleEntryUpdate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
@@ -49,7 +52,7 @@ def patch_cycle(
 
 @router.delete("/{cycle_id}", status_code=status.HTTP_204_NO_CONTENT, response_class=Response)
 def remove_cycle(
-    cycle_id: int,
+    cycle_id: uuid.UUID,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> None:

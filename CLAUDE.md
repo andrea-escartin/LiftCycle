@@ -56,85 +56,268 @@ For multi-step tasks, state a brief plan before starting:
 
 ---
 
-# Project: Period & Workout Tracker
+# Project: LiftCycle
 
-A multi-user health tracking web app. Users log in and track their
-own cycle data, workouts, body metrics, and nutrition.
+A multi-user health tracking web app. Users register, log in, and track
+their menstrual cycle alongside their workouts to understand how hormonal
+phases affect training performance.
+
+## Product documents (read before implementing any feature)
+- 01_pdr.md — product goals, personas, design principles, non-goals
+- 02_user_stories.md — acceptance criteria per feature, priority labels (P0/P1/P2)
+- 03_tech_spec.md — authoritative technical reference
+
+These three files live in the project root. Always consult them.
+P0 stories are must-have for v1. P1 are strong v1 goals. P2 are deferred.
+
+---
 
 ## Stack
 
 ### Backend
 - Python 3.12, FastAPI, SQLModel (ORM), PostgreSQL
-- Alembic for database migrations
-- JWT authentication (python-jose + passlib/bcrypt)
-- uv for dependency management — always use `uv run` prefix
+- Alembic for migrations and exercise preset seeding
+- JWT authentication via python-jose (HttpOnly cookies — NOT localStorage)
+- passlib[bcrypt] for password hashing (cost factor ≥ 12)
+- pydantic-settings for config via .env
+- uv for dependency management — ALWAYS use `uv run` prefix
 - pytest + httpx for tests
 
 ### Frontend
 - React 18, TypeScript, Vite
 - React Router v6 for navigation
-- Axios for API calls (all calls go through src/api/, never fetch() directly)
-- No CSS framework yet — plain CSS modules per component
+- Axios for all HTTP calls — NEVER use fetch() directly
+- date-fns for all date arithmetic and formatting — NEVER use new Date() for display
+- Plain CSS Modules per component — NO CSS framework
+- AuthContext for auth state management
+
+---
 
 ## Architecture
 
 - Monorepo: backend/ and frontend/ in one repo
-- Backend is a REST API — all data via JSON endpoints
+- Backend is a REST API. Base path: /api/v1
 - Frontend is a separate SPA that calls the API
-- Each domain (cycles, workouts, metrics, nutrition) has its own router
+- Each domain has its own folder: router.py, service.py, models.py, schemas.py
+- Auth uses HttpOnly cookies (access_token 15min, refresh_token 30 days)
+- Axios instance configured with withCredentials: true
+- 401 responses trigger silent token refresh then retry via Axios interceptor
 
-## Project layout
+---
 
-### Backend (backend/)
-- app/main.py          — FastAPI app, lifespan, router wiring
-- app/models.py        — SQLModel table models + Pydantic schemas
-- app/db.py            — engine, session dependency
-- app/auth.py          — JWT creation and validation
-- app/services.py      — shared/cross-domain business logic
-- app/routers/auth.py  — login and register endpoints
-- app/routers/cycles.py — cycle tracking endpoints
-- tests/               — pytest tests
+## Backend project layout
 
-### Frontend (frontend/)
-- src/pages/        — one folder per screen
-- src/components/   — reusable UI pieces
-- src/api/          — one file per domain (auth.ts, cycles.ts)
-- src/hooks/        — custom React hooks
-- src/main.tsx      — app entry point, router setup
+```
+backend/app/
+├── main.py              — FastAPI app factory, router registration, CORS
+├── config.py            — pydantic-settings, loads .env
+├── database.py          — engine, get_session dependency
+├── auth/
+│   ├── router.py        — /auth/* endpoints
+│   ├── service.py       — token creation, hashing logic
+│   ├── schemas.py       — Pydantic I/O models
+│   └── dependencies.py  — get_current_user dependency
+├── users/
+│   ├── router.py        — /users/me endpoints
+│   ├── service.py
+│   ├── models.py        — User SQLModel table
+│   └── schemas.py
+├── cycles/
+│   ├── router.py        — /cycles endpoints
+│   ├── service.py       — CRUD + phase inference
+│   ├── models.py        — Cycle SQLModel table
+│   └── schemas.py
+├── workouts/
+│   ├── router.py
+│   ├── service.py
+│   ├── models.py
+│   └── schemas.py
+├── exercises/
+│   ├── router.py        — /exercises/presets (read-only)
+│   ├── models.py
+│   └── schemas.py
+├── symptoms/
+│   ├── router.py
+│   ├── service.py
+│   ├── models.py
+│   └── schemas.py
+├── medications/
+│   ├── router.py
+│   ├── service.py
+│   ├── models.py
+│   └── schemas.py
+├── dashboard/
+│   ├── router.py        — /dashboard/month
+│   └── service.py
+└── insights/
+    ├── router.py        — /insights/*
+    └── service.py
+```
 
-## Conventions
+## Frontend project layout
+
+```
+frontend/src/
+├── api/
+│   ├── client.ts        — Axios instance, withCredentials, 401 interceptor
+│   ├── auth.ts
+│   ├── cycles.ts
+│   ├── workouts.ts
+│   ├── exercises.ts
+│   ├── symptoms.ts
+│   ├── medications.ts
+│   ├── insights.ts
+│   ├── dashboard.ts
+│   └── users.ts
+├── components/
+│   └── [ComponentName]/
+│       ├── ComponentName.tsx
+│       └── ComponentName.module.css
+├── pages/
+│   ├── Dashboard/
+│   ├── CycleLog/
+│   ├── WorkoutLog/
+│   ├── WorkoutHistory/
+│   ├── Insights/
+│   ├── Settings/
+│   ├── Login/
+│   └── Register/
+├── hooks/               — useAuth, useCycles, useWorkouts, etc.
+├── context/             — AuthContext
+├── types/               — interfaces mirroring backend schemas
+├── utils/
+│   ├── phaseInference.ts   — client-side phase calculation
+│   └── unitConversion.ts   — kg ↔ lbs helpers
+├── App.tsx
+└── main.tsx
+```
+
+---
+
+## Database rules
+
+- All primary keys are UUIDs (not integers)
+- All tables have created_at and updated_at
+- All FK relationships use cascade delete
+- Weights always stored in kg internally; convert for display only
+- is_planned=true workouts excluded from all insight calculations
+- is_template=true workouts excluded from history and insight calculations
+
+---
+
+## Backend conventions
 
 - Type hints on all functions and return values
-- SQLModel models for DB tables; separate Pydantic schemas for
-  request/response bodies — no raw dicts in endpoints
-- Business logic in services, not in route handlers
-- Every endpoint needs authentication except /auth/register and /auth/login
-- Return 404 when a resource is not found
+- SQLModel models for DB tables; separate Pydantic schemas in schemas.py
+- Business logic in service.py, never in router handlers
+- Every endpoint authenticated except /auth/register, /auth/login,
+  /auth/forgot-password, /auth/reset-password
+- Return 404 for not found OR wrong user (never 403 — avoids leaking existence)
 - Consistent error shape: { detail: string }
-- Tests use in-memory SQLite (not the real DB)
+- Config loaded via pydantic-settings (config.py), not os.getenv() directly
+
+## Frontend conventions
+
+- All API calls via src/api/ functions — never fetch() directly
+- All types defined in src/types/ — never use `any`
+- All dates via date-fns — never new Date() for display
+- One .module.css per component, class names in camelCase
+- Phase colours as CSS custom properties in index.css
+- Form errors shown inline; network/server errors as toast notifications
+- Always read unit_preference from user context before rendering weight values
+
+---
+
+## Phase inference logic (implement exactly — both backend and frontend)
+
+```
+Given: target_date, user's cycle entries [], user settings
+
+1. Find most recent cycle start_date <= target_date.
+   If none → return phase: UNKNOWN
+
+2. Determine cycle_length:
+   - If user has >= 3 complete cycles: rolling average of last 3
+   - Else if cycle_length_override set: use that
+   - Else: 28
+
+3. days_into_cycle = target_date − cycle_start_date (0-indexed)
+
+4. menstrual_end_offset:
+   - If cycle has end_date: end_date − start_date
+   - Else: 4 (5-day default, 0-indexed)
+
+5. estimated_ovulation_day = cycle_length − 14
+
+6. Phase assignment:
+   - days_into_cycle <= menstrual_end_offset       → MENSTRUAL
+   - days_into_cycle < estimated_ovulation_day − 1 → FOLLICULAR
+   - days_into_cycle in [ovulation_day−1, ovulation_day] → OVULATORY
+   - days_into_cycle > estimated_ovulation_day      → LUTEAL
+
+7. Missed period warning:
+   If (today − last_cycle_start) > (cycle_length × 1.5) → warn user
+```
+
+---
+
+## API base path
+
+All endpoints prefixed with /api/v1
+
+---
+
+## Environment variables
+
+### Backend (.env)
+```
+DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/liftcycle
+SECRET_KEY=<random 64-char hex>
+REFRESH_SECRET_KEY=<random 64-char hex>
+ACCESS_TOKEN_EXPIRE_MINUTES=15
+REFRESH_TOKEN_EXPIRE_DAYS=30
+FRONTEND_URL=http://localhost:5173
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASSWORD=
+EMAIL_FROM=noreply@liftcycle.app
+ENVIRONMENT=development
+```
+
+### Frontend (.env)
+```
+VITE_API_BASE_URL=http://localhost:8000/api/v1
+```
+
+---
 
 ## Commands
 
-### Backend
-- Install dep:   uv add <package>         (run from backend/)
-- Run server:    uv run uvicorn app.main:app --reload --port 3000
+### Backend (run from backend/)
+- Run server:    uv run uvicorn app.main:app --reload --port 8000
 - Run tests:     uv run pytest -v
-- Migrations:    uv run alembic upgrade head
+- Run migration: uv run alembic upgrade head
+- Add dep:       uv add <package>
 
-### Frontend
-- Install dep:   npm install <package>    (run from frontend/)
-- Dev server:    npm run dev
+### Frontend (run from frontend/)
+- Dev server:    npm run dev   (runs on http://localhost:5173)
 - Build:         npm run build
+- Add dep:       npm install <package>
 
-## Current status
-
-Building cycle tracking domain first (auth + cycles). Other
-domains (workouts, metrics, nutrition) come later.
+---
 
 ## What NOT to do
 
-- Do not put business logic in route handlers
-- Do not store plain text passwords — always hash with passlib
-- Do not commit .env or any secrets
-- Do not add features not explicitly asked for
+- Do not use integer primary keys — always UUID
+- Do not store tokens in localStorage — HttpOnly cookies only
+- Do not call fetch() in the frontend — always src/api/ functions
+- Do not put business logic in route handlers — always service.py
+- Do not store passwords in plaintext — always bcrypt hash
+- Do not use new Date() for display — always date-fns
+- Do not use any CSS framework — CSS Modules only
+- Do not use `any` in TypeScript — always define types in src/types/
+- Do not commit .env files
+- Do not add features not explicitly requested
 - Do not modify files outside the scope of the current task
+- Do not include is_planned or is_template workouts in insights
