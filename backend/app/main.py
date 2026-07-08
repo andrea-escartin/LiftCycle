@@ -1,15 +1,15 @@
-from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.auth.router import router as auth_router
 from app.config import settings
+from app.cycles import models as cycle_models  # noqa: F401
+from app.cycles.router import router as cycles_router
 from app.database import create_db_and_tables
 from app.users import models as user_models  # noqa: F401
-from app.cycles import models as cycle_models  # noqa: F401
-from app.auth.router import router as auth_router
-from app.cycles.router import router as cycles_router
 
 
 @asynccontextmanager

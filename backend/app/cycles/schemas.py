@@ -1,29 +1,28 @@
 import uuid
 from datetime import date, datetime
-from typing import Optional
 
 from sqlmodel import SQLModel
 
 
 class CycleEntryCreate(SQLModel):
     start_date: date
-    end_date: Optional[date] = None
-    notes: Optional[str] = None
+    end_date: date | None = None
+    notes: str | None = None
 
 
 class CycleEntryRead(SQLModel):
     id: uuid.UUID
     user_id: uuid.UUID
     start_date: date
-    end_date: Optional[date]
-    cycle_length: Optional[int]
-    notes: Optional[str]
+    end_date: date | None
+    cycle_length: int | None
+    notes: str | None
     created_at: datetime
     updated_at: datetime
 
 
 class CycleEntryUpdate(SQLModel):
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    cycle_length: Optional[int] = None
-    notes: Optional[str] = None
+    start_date: date | None = None
+    end_date: date | None = None
+    cycle_length: int | None = None
+    notes: str | None = None
