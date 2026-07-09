@@ -4,49 +4,65 @@ from fastapi import APIRouter, Depends, Response, status
 from sqlmodel import Session
 
 from app.auth.dependencies import get_current_user
-from app.cycles.schemas import CycleEntryCreate, CycleEntryRead, CycleEntryUpdate
-from app.cycles.service import create_cycle, delete_cycle, get_cycle, get_cycles, update_cycle
+from app.cycles.schemas import CycleCreate, CycleCreateResponse, CycleRead, CycleUpdate, PhaseResult
+from app.cycles.service import (
+    create_cycle,
+    delete_cycle,
+    get_current_phase,
+    get_cycle,
+    get_cycles,
+    update_cycle,
+)
 from app.database import get_session
 from app.users.models import User
 
 router = APIRouter()
 
 
-@router.post("/", response_model=CycleEntryRead, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=CycleCreateResponse, status_code=status.HTTP_201_CREATED)
 def create(
-    data: CycleEntryCreate,
+    data: CycleCreate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
-) -> CycleEntryRead:
-    return create_cycle(session, current_user.id, data)
+) -> CycleCreateResponse:
+    entry, warning = create_cycle(session, current_user.id, data)
+    return CycleCreateResponse(**CycleRead.model_validate(entry).model_dump(), missed_period_warning=warning)
 
 
-@router.get("/", response_model=list[CycleEntryRead])
+@router.get("/", response_model=list[CycleRead])
 def list_cycles(
     skip: int = 0,
     limit: int = 20,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
-) -> list[CycleEntryRead]:
+) -> list[CycleRead]:
     return get_cycles(session, current_user.id, skip, limit)
 
 
-@router.get("/{cycle_id}", response_model=CycleEntryRead)
+@router.get("/phase/current", response_model=PhaseResult)
+def read_current_phase(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+) -> PhaseResult:
+    return get_current_phase(session, current_user.id)
+
+
+@router.get("/{cycle_id}", response_model=CycleRead)
 def read_cycle(
     cycle_id: uuid.UUID,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
-) -> CycleEntryRead:
+) -> CycleRead:
     return get_cycle(session, current_user.id, cycle_id)
 
 
-@router.patch("/{cycle_id}", response_model=CycleEntryRead)
+@router.patch("/{cycle_id}", response_model=CycleRead)
 def patch_cycle(
     cycle_id: uuid.UUID,
-    data: CycleEntryUpdate,
+    data: CycleUpdate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
-) -> CycleEntryRead:
+) -> CycleRead:
     return update_cycle(session, current_user.id, cycle_id, data)
 
 
