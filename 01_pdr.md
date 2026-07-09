@@ -1,13 +1,13 @@
-**Version:** 1.0  
-**Platform:** Web (mobile-web responsive; native mobile deferred to v2)  
+**Version:** 1.0
+**Platform:** Web (mobile-web responsive; native mobile deferred to v2)
 **Audience:** Anyone with a menstrual cycle who exercises
- 
+
 ---
- 
+
 ## 1. Problem Statement
- 
+
 The menstrual cycle affects the hormones and impacts energy levels, strenght and motivation. Most of the available workout tracking tools ignore this fact. LifCycle will allow people with menstrual cycles who worksout regularly to track their period and log their workouts in one place, so users can see trends reflected based on their cycles and not only as a whole.
- 
+
 ---
 
 ## 2. Goals
@@ -23,7 +23,7 @@ The menstrual cycle affects the hormones and impacts energy levels, strenght and
 ---
 
 ## 3. Non-Goals (v1)
- 
+
 - No AI-generated workout plans or meal plans.
 - No social/sharing features.
 - No wearable or third-party app integrations (Apple Health, Garmin, etc.).
@@ -31,10 +31,11 @@ The menstrual cycle affects the hormones and impacts energy levels, strenght and
 - No paid tiers or monetisation logic.
 - No push notifications (web notifications only if time permits, not required).
 - No nutritional - information logging
-No body measures logging
+- No body measures logging
+- Detect improvement and offer to update template
 
 ---
- 
+
 ## 4. User Personas
 1. Person that exercises regularly They exercise 2+ times per week, in different modalities, e.g. gym, pool, classes. Notices that the motivation and strenght does not increase linearly and oscillates in a month. Needs an easy tool to keep track of workouts in relationship with their cycle
 Name: Andrea
@@ -45,7 +46,7 @@ Will log off and never come back if logging workouts becomes too tedious
 1. Person that does not exercise regularly. They are mainly interested in the period tracking functionallity. They use the workout tracker to add context to their routines, e.g. bad weeks in which they do not workout are explained by their cycle
 Name: Carlota
 Age: 30
-Office job, starting to build a work out routine/ only into casual workouts. 
+Office job, starting to build a work out routine/ only into casual workouts.
 Wants to have accurate period tracking and prediction, and understand its impact on their motivation
 Will log off and never come back if logging workouts becomes too tedious, period tracker is not accurate or the non workout days/weeks/periods are punished
 
